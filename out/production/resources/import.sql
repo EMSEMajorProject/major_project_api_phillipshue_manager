@@ -1,0 +1,1 @@
+INSERT INTO Phillips_Hue (id, sat, bri, state) VALUES (10, 25, 25, 'true');
