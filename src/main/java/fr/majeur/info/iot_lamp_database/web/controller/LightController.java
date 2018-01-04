@@ -40,21 +40,21 @@ public class LightController {
         return new PhillipsHueDto(phillipsHue);
     }
 
-    @PostMapping(value = "/{id}/sat/{sat}")
+    @PutMapping(value = "/{id}/sat/{sat}")
     public PhillipsHueDto setsat(@PathVariable Long id, @PathVariable Long sat) {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
         phillipsHue.setSat(sat);
         return new PhillipsHueDto(phillipsHue);
     }
 
-    @PostMapping(value = "/{id}/bri/{bri}")
+    @PutMapping(value = "/{id}/bri/{bri}")
     public PhillipsHueDto setbri(@PathVariable Long id, @PathVariable Long bri) {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
         phillipsHue.setBri(bri);
         return new PhillipsHueDto(phillipsHue);
     }
 
-    @PostMapping(value = "/{id}/hue/{hue}")
+    @PutMapping(value = "/{id}/hue/{hue}")
     public PhillipsHueDto sethue(@PathVariable Long id, @PathVariable Long hue) {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
         phillipsHue.setHue(hue);
