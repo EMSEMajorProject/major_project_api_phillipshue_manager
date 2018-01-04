@@ -30,4 +30,5 @@ dependencies {
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	testCompile 'com.ninja-squad:DbSetup:2.1.0'
 	compile('com.h2database:h2')
+	compile "com.heroku.sdk:heroku-jdbc:0.1.1"
 }
