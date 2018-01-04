@@ -15,15 +15,19 @@ public class PhillipsHue {
     private Long bri;
 
     @Column
+    private Long hue;
+
+    @Column
     private Boolean state;
 
     public PhillipsHue() {
     }
 
-    public PhillipsHue(Long sat, Long bri, Boolean on) {
+    public PhillipsHue(Long sat, Long bri, Long hue, Boolean state) {
         this.sat = sat;
         this.bri = bri;
-        this.state = on;
+        this.hue = hue;
+        this.state = state;
     }
 
     public Long getId() {
@@ -56,5 +60,13 @@ public class PhillipsHue {
 
     public void setState(Boolean state) {
         this.state = state;
+    }
+
+    public Long getHue() {
+        return hue;
+    }
+
+    public void setHue(Long hue) {
+        this.hue = hue;
     }
 }

@@ -6,11 +6,13 @@ public class PhillipsHueDto {
     private Boolean on;
     private Long sat;
     private Long bri;
+    private Long hue;
 
     public PhillipsHueDto(PhillipsHue phillipsHue) {
         sat = phillipsHue.getSat();
         bri = phillipsHue.getBri();
         on = phillipsHue.getState();
+        hue = phillipsHue.getHue();
     }
 
     public Boolean getOn() {
@@ -35,5 +37,13 @@ public class PhillipsHueDto {
 
     public void setBri(Long bri) {
         this.bri = bri;
+    }
+
+    public Long getHue() {
+        return hue;
+    }
+
+    public void setHue(Long hue) {
+        this.hue = hue;
     }
 }
