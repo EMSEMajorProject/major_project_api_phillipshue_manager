@@ -1,8 +1,12 @@
 package fr.majeur.info.iot_lamp_database.web.controller;
 
+import fr.majeur.info.iot_lamp_database.MQTT.CloudMQTT;
+import fr.majeur.info.iot_lamp_database.Util;
 import fr.majeur.info.iot_lamp_database.dao.PhillipsHueDao;
 import fr.majeur.info.iot_lamp_database.model.PhillipsHue;
 import fr.majeur.info.iot_lamp_database.web.dto.PhillipsHueDto;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
@@ -13,11 +17,12 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/api/lights")
 @Transactional
 public class LightController {
-    private final PhillipsHueDao phillipsHueDao;
 
-    public LightController(PhillipsHueDao phillipsHueDao) {
-        this.phillipsHueDao = phillipsHueDao;
-    }
+    @Autowired
+    private CloudMQTT cloudMQTT;
+
+    @Autowired
+    private PhillipsHueDao phillipsHueDao;
 
     @GetMapping(value = "/{id}")
     public PhillipsHueDto getlight(@PathVariable Long id) {
@@ -30,13 +35,11 @@ public class LightController {
     }
 
     @PostMapping(value = "/{id}/switch")
-    public PhillipsHueDto switchlight(@PathVariable Long id) {
+    public PhillipsHueDto switchlight(@PathVariable Long id) throws MqttException {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
-        if (phillipsHue.getState()) {
-            phillipsHue.setState(false);
-        } else {
-            phillipsHue.setState(true);
-        }
+        phillipsHue.switchLight();
+        cloudMQTT.publish("switchTopic","true");
+        cloudMQTT.subscribe(Util.topics);
         return new PhillipsHueDto(phillipsHue);
     }
 
@@ -55,9 +58,11 @@ public class LightController {
     }
 
     @PutMapping(value = "/{id}/hue/{hue}")
-    public PhillipsHueDto sethue(@PathVariable Long id, @PathVariable Long hue) {
+    public PhillipsHueDto sethue(@PathVariable Long id, @PathVariable Long hue) throws MqttException {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
         phillipsHue.setHue(hue);
+        cloudMQTT.publish("lumTopic",hue.toString());
+        cloudMQTT.subscribe(Util.topics);
         return new PhillipsHueDto(phillipsHue);
     }
 }

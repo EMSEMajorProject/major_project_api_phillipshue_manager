@@ -15,9 +15,15 @@ package fr.majeur.info.iot_lamp_database.MQTT; /********************************
  */
 
 
+import fr.majeur.info.iot_lamp_database.Util;
+import fr.majeur.info.iot_lamp_database.dao.PhillipsHueDao;
+import fr.majeur.info.iot_lamp_database.model.PhillipsHue;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.sql.Timestamp;
 
 /**
@@ -40,6 +46,8 @@ import java.sql.Timestamp;
  *  If the application is run with the -h parameter then info is displayed that
  *  describes all of the options / parameters.
  */
+@Service
+@Transactional
 public class CloudMQTT implements MqttCallback {
 
     /**
@@ -49,70 +57,33 @@ public class CloudMQTT implements MqttCallback {
      * command-line before performing the specified action.
      */
     // Private instance variables
-    private static MqttClient client;
-    private static String brokerUrl;
-    private static boolean quietMode;
-    private static MqttConnectOptions conOpt;
-    private static boolean clean;
-    private static String password;
-    private static String userName;
-    private static String clientId;
-    private static int qos;
+    private MqttClient client;
+
+    private boolean quietMode = false;
+    private MqttConnectOptions conOpt;
+    private boolean clean =true;
+
+    private int qos =2;
+
+    @Autowired
+    private PhillipsHueDao phillipsHueDao;
 
 
-    public static void init() {
-
-        // Default settings:
-        quietMode 	= false;
-        qos 			= 2;
-        String broker 		= "m23.cloudmqtt.com";
-        int port 			= 15317;
-        clientId 	= null;
-        clean = true;			// Non durable subscriptions
-        boolean ssl = false;
-        password = "backoffice";
-        userName = "backoffice";
-
-        String protocol = "tcp://";
-
-        if (ssl) {
-            protocol = "ssl://";
-        }
-
-        brokerUrl = protocol + broker + ":" + port;
-
-        if (clientId == null || clientId.equals("")) {
-            clientId = "BackOffice";
-        }
+    public void init() throws MqttException {
 
         String tmpDir = System.getProperty("java.io.tmpdir");
         MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence(tmpDir);
 
-        try {
-            // Construct the connection options object that contains connection parameters
-            // such as cleanSession and LWT
-            conOpt = new MqttConnectOptions();
-            conOpt.setCleanSession(clean);
-            if(password != null ) {
-                conOpt.setPassword(password.toCharArray());
-            }
-            if(userName != null) {
-                conOpt.setUserName(userName);
-            }
+        conOpt = new MqttConnectOptions();
+        conOpt.setCleanSession(clean);
+        conOpt.setPassword(Util.MqttPassword.toCharArray());
+        conOpt.setUserName(Util.MqttUser);
 
             // Construct an MQTT blocking mode client
-            client = new MqttClient(brokerUrl,clientId, dataStore);
+        client = new MqttClient(Util.BrokerUrl,Util.MqqtClintId, dataStore);
 
-
-        } catch (MqttException e) {
-            e.printStackTrace();
-            log("Unable to set up client: "+e.toString());
-            System.exit(1);
-        }
+        this.subscribe(Util.topics);
     }
-
-
-
 
     public CloudMQTT() throws MqttException {
         init();
@@ -123,11 +94,14 @@ public class CloudMQTT implements MqttCallback {
      * @param message the String to send to the MQTT server
      * @throws MqttException
      */
-    public static void publish(String topic, String message) throws MqttException {
+    public void publish(String topic, String message) throws MqttException {
 
+        if (client.isConnected()){
+            disconnect();
+        }
         byte[] payload = message.getBytes();
         // Connect to the MQTT server
-        log("Connecting to "+brokerUrl + " with client ID "+client.getClientId());
+        log("Connecting to "+Util.BrokerUrl + " with client ID "+client.getClientId());
         client.connect(conOpt);
         log("Connected");
 
@@ -142,7 +116,7 @@ public class CloudMQTT implements MqttCallback {
         // it has been delivered to the server meeting the specified
         // quality of service.
         client.publish(topic, mqttMessage);
-        disconnect();
+        this.disconnect();
     }
 
     /**
@@ -152,11 +126,14 @@ public class CloudMQTT implements MqttCallback {
      * pressed.
      * @throws MqttException
      */
-    public static void subscribe(String[] topics) throws MqttException {
+    public void subscribe(String[] topics) throws MqttException {
 
+        if (client.isConnected()){
+            disconnect();
+        }
         // Connect to the MQTT server
         client.connect(conOpt);
-        log("Connected to "+brokerUrl+" with client ID "+client.getClientId());
+        log("Connected to "+Util.BrokerUrl+" with client ID "+client.getClientId());
 
         // Subscribe to the requested topic
         // The QoS specified is the maximum level that messages will be sent to the client at.
@@ -169,26 +146,8 @@ public class CloudMQTT implements MqttCallback {
         }
         log("Subscribing to topic \""+stringTopics+"\" qos "+qos);
 
-        client.setCallback(new MqttCallback() {
-            @Override
-            public void connectionLost(Throwable cause) {
+        client.setCallback(this);
 
-            }
-
-            @Override
-            public void messageArrived(String topic, MqttMessage message) {
-                log(message.toString());
-                log("\nReceived a Message!" +
-                        "\n\tTopic:   " + topic +
-                        "\n\tMessage: " + new String(message.getPayload()) +
-                        "\n");
-            }
-
-            @Override
-            public void deliveryComplete(IMqttDeliveryToken token) {
-
-            }
-        });
         for (String topic:topics) {
             client.subscribe(topic, qos);
             log("Subscribed to "+topic);
@@ -197,7 +156,7 @@ public class CloudMQTT implements MqttCallback {
 
     }
 
-    public static void disconnect() throws MqttException {
+    public void disconnect() throws MqttException {
         // Disconnect the client
         client.disconnect();
         log("Disconnected");
@@ -207,7 +166,7 @@ public class CloudMQTT implements MqttCallback {
      * Utility method to handle logging. If 'quietMode' is set, this method does nothing
      * @param message the message to log
      */
-    private static void log(String message) {
+    private void log(String message) {
         if (!quietMode) {
             System.out.println(message);
         }
@@ -224,7 +183,7 @@ public class CloudMQTT implements MqttCallback {
         // Called when the connection to the server has been lost.
         // An application may choose to implement reconnection
         // logic at this point. This sample simply exits.
-        log("Connection to " + brokerUrl + " lost!" + cause);
+        log("Connection to " + Util.BrokerUrl + " lost!" + cause);
         System.exit(1);
     }
 
@@ -257,10 +216,40 @@ public class CloudMQTT implements MqttCallback {
         // Called when a message arrives from the server that matches any
         // subscription made by the client
         String time = new Timestamp(System.currentTimeMillis()).toString();
-        System.out.println("Time:\t" +time +
-                "  Topic:\t" + topic +
-                "  Message:\t" + new String(message.getPayload()) +
-                "  QoS:\t" + message.getQos());
+
+        if (topic.equalsIgnoreCase("switchTopic")) {
+            log("\nReceived a Message!" +
+                    "\n\tTopic:   " + topic +
+                    "\n\tMessage: " + new String(message.getPayload()) +
+                    "\n");
+            try {
+                PhillipsHue phillipsHue = phillipsHueDao.getOne(Util.id_lamp);
+                phillipsHue.switchLight();
+                phillipsHueDao.save(phillipsHue);
+                log("switched");
+            }catch (Exception e){
+                log("error");
+                log(e.getMessage()+"\n"+e.toString());
+            }
+        }
+        if(topic.equalsIgnoreCase("lumTopic")) {
+            log("\nReceived a Message!" +
+                    "\n\tTopic:   " + topic +
+                    "\n\tMessage: " + new String(message.getPayload()) +
+                    "\n");
+            Util.hue_value = Long.parseLong(message.toString());
+            try {
+                PhillipsHue phillipsHue = phillipsHueDao.getOne(Util.id_lamp);
+                phillipsHue.setHue(Util.hue_value);
+                phillipsHueDao.save(phillipsHue);
+                log("Hue set");
+            }catch (Exception e){
+                log("error");
+                log(e.getMessage()+"\n"+e.toString());
+            }
+        }
+
+
     }
 
     /****************************************************************/

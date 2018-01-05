@@ -30,6 +30,10 @@ public class PhillipsHue {
         this.state = state;
     }
 
+    public void switchLight(){
+        state = state == false ? true : false;
+    }
+
     public Long getId() {
         return id;
     }
