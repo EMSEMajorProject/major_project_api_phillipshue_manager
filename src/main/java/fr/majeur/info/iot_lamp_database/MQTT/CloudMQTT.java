@@ -215,41 +215,29 @@ public class CloudMQTT implements MqttCallback {
     public void messageArrived(String topic, MqttMessage message) throws MqttException {
         // Called when a message arrives from the server that matches any
         // subscription made by the client
-        String time = new Timestamp(System.currentTimeMillis()).toString();
-
-        if (topic.equalsIgnoreCase("switchTopic")) {
-            log("\nReceived a Message!" +
-                    "\n\tTopic:   " + topic +
-                    "\n\tMessage: " + new String(message.getPayload()) +
-                    "\n");
-            try {
-                PhillipsHue phillipsHue = phillipsHueDao.getOne(Util.id_lamp);
+        log("\nReceived a Message!" +
+                "\n\tTopic:   " + topic +
+                "\n\tMessage: " + new String(message.getPayload()) +
+                "\n");
+        try {
+            PhillipsHue phillipsHue = phillipsHueDao.getOne(Util.id_lamp);
+            if (topic.equalsIgnoreCase("switchTopic")) {
                 phillipsHue.switchLight();
-                phillipsHueDao.save(phillipsHue);
                 log("switched");
-            }catch (Exception e){
-                log("error");
-                log(e.getMessage()+"\n"+e.toString());
-            }
-        }
-        if(topic.equalsIgnoreCase("lumTopic")) {
-            log("\nReceived a Message!" +
-                    "\n\tTopic:   " + topic +
-                    "\n\tMessage: " + new String(message.getPayload()) +
-                    "\n");
-            Util.hue_value = Long.parseLong(message.toString());
-            try {
-                PhillipsHue phillipsHue = phillipsHueDao.getOne(Util.id_lamp);
-                phillipsHue.setHue(Util.hue_value);
-                phillipsHueDao.save(phillipsHue);
+            }else if (topic.equalsIgnoreCase("lumTopic")){
+                phillipsHue.setHue(Long.parseLong(message.toString()));
                 log("Hue set");
-            }catch (Exception e){
-                log("error");
-                log(e.getMessage()+"\n"+e.toString());
+            }else if (topic.equalsIgnoreCase("satTopic")){
+                phillipsHue.setSat(Long.parseLong(message.toString()));
+                log("Sat set");
+            }else if (topic.equalsIgnoreCase("briTopic")){
+                phillipsHue.setBri(Long.parseLong(message.toString()));
+                log("Bri set");
             }
+        }catch (Exception e){
+            log("error");
+            log(e.getMessage()+"\n"+e.toString());
         }
-
-
     }
 
     /****************************************************************/

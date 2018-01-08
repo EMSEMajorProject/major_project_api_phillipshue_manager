@@ -44,16 +44,20 @@ public class LightController {
     }
 
     @PutMapping(value = "/{id}/sat/{sat}")
-    public PhillipsHueDto setsat(@PathVariable Long id, @PathVariable Long sat) {
+    public PhillipsHueDto setsat(@PathVariable Long id, @PathVariable Long sat) throws MqttException {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
         phillipsHue.setSat(sat);
+        cloudMQTT.publish("lumTopic",sat.toString());
+        cloudMQTT.subscribe(Util.topics);
         return new PhillipsHueDto(phillipsHue);
     }
 
     @PutMapping(value = "/{id}/bri/{bri}")
-    public PhillipsHueDto setbri(@PathVariable Long id, @PathVariable Long bri) {
+    public PhillipsHueDto setbri(@PathVariable Long id, @PathVariable Long bri) throws MqttException {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
         phillipsHue.setBri(bri);
+        cloudMQTT.publish("briTopic", bri.toString());
+        cloudMQTT.subscribe(Util.topics);
         return new PhillipsHueDto(phillipsHue);
     }
 
