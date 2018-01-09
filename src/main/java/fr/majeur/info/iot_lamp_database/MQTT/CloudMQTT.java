@@ -234,6 +234,7 @@ public class CloudMQTT implements MqttCallback {
                 phillipsHue.setBri(Long.parseLong(message.toString()));
                 log("Bri set");
             }
+            phillipsHueDao.save(phillipsHue);
         }catch (Exception e){
             log("error");
             log(e.getMessage()+"\n"+e.toString());
