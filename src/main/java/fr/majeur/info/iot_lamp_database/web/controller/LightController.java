@@ -4,6 +4,7 @@ import fr.majeur.info.iot_lamp_database.MQTT.CloudMQTT;
 import fr.majeur.info.iot_lamp_database.Util;
 import fr.majeur.info.iot_lamp_database.dao.PhillipsHueDao;
 import fr.majeur.info.iot_lamp_database.model.PhillipsHue;
+import fr.majeur.info.iot_lamp_database.web.dto.ColorDto;
 import fr.majeur.info.iot_lamp_database.web.dto.PhillipsHueDto;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +67,19 @@ public class LightController {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
         phillipsHue.setHue(hue);
         cloudMQTT.publish("lumTopic",hue.toString());
+        cloudMQTT.subscribe(Util.topics);
+        return new PhillipsHueDto(phillipsHue);
+    }
+
+    @PostMapping(value = "/{id}/color")
+    public PhillipsHueDto setColor(@PathVariable Long id, @RequestBody ColorDto colorDto) throws MqttException {
+        PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
+        phillipsHue.setHue(colorDto.getHue());
+        phillipsHue.setBri(colorDto.getBri());
+        phillipsHue.setSat(colorDto.getSat());
+        cloudMQTT.publish("lumTopic",colorDto.getHue().toString());
+        cloudMQTT.publish("briTopic",colorDto.getBri().toString());
+        cloudMQTT.publish("satTopic",colorDto.getSat().toString());
         cloudMQTT.subscribe(Util.topics);
         return new PhillipsHueDto(phillipsHue);
     }
