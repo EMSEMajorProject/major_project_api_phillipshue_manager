@@ -48,7 +48,7 @@ public class LightController {
     public PhillipsHueDto setsat(@PathVariable Long id, @PathVariable Long sat) throws MqttException {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
         phillipsHue.setSat(sat);
-        cloudMQTT.publish("lumTopic",sat.toString());
+        cloudMQTT.publish("satTopic",sat.toString());
         cloudMQTT.subscribe(Util.topics);
         return new PhillipsHueDto(phillipsHue);
     }
