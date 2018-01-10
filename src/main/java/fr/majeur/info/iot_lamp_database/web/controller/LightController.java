@@ -44,6 +44,13 @@ public class LightController {
         return new PhillipsHueDto(phillipsHue);
     }
 
+    @PostMapping(value = "/{id}/switchSilent")
+    public PhillipsHueDto switchlightSilent(@PathVariable Long id) {
+        PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
+        phillipsHue.switchLight();
+        return new PhillipsHueDto(phillipsHue);
+    }
+
     @PutMapping(value = "/{id}/sat/{sat}")
     public PhillipsHueDto setsat(@PathVariable Long id, @PathVariable Long sat) throws MqttException {
         PhillipsHue phillipsHue = phillipsHueDao.findOne(id);
